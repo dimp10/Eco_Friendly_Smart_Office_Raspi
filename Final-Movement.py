@@ -16,6 +16,8 @@ net_connect = ConnectHandler(
 )
 
 
+# all the ports you want closed
+#interfaces = ["gigabitEthernet 1/0/29", "gigabitEthernet 1/0/30", "gigabitEthernet 1/0/31"]
 
 def Close(interfaces):
     # repeates for every interface(port)
@@ -47,7 +49,7 @@ def TurnOn():
             output = net_connect.send_command(f"show interface {interface}")
             
             # Checks if the port is off If yes Then it opens it
-            if "down" in output:
+            if "disabled" in output:
                 print(f"{interface} is administratively down")
                 Open(interface)
                 print(f"{interface} has been enabled, please wait for AP to boot")
@@ -76,9 +78,9 @@ def Timer():
             timer += 1
 
 
-# When out of working hours the code is running otherwise the ports are left open
+# when out of working hours the code is running otherwise the ports are left open
 while True:
     TurnOn()
-    while now.hour >= maxHours and now.hour <= minHours:
+    while now.hour >= maxHours or now.hour <= minHours:
         TurnOn()
         Timer()
