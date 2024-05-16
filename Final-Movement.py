@@ -2,21 +2,20 @@ from netmiko import ConnectHandler
 from gpiozero import MotionSensor
 from time import sleep
 from datetime import datetime
+from Config import deviceType, host, username_, password_, checkTime, sleepTime, maxHours, minHours, interfaces
 
 
 now = datetime.now()
 
 # REQUIRED TO CONNECT TO SERVER
 net_connect = ConnectHandler(
-    device_type="cisco_xe",
-    host="100.71.10.5",
-    username="gbadmin",
-    password="gb_1nf0rmat",
+    device_type = deviceType,
+    host = host,
+    username = username_,
+    password = password_,
 )
 
 
-# all the ports you want closed
-interfaces = ["gigabitEthernet 1/0/29", "gigabitEthernet 1/0/30", "gigabitEthernet 1/0/31"]
 
 def Close(interfaces):
     # repeates for every interface(port)
@@ -59,7 +58,7 @@ def TurnOn():
 def Timer():
     check = True
     print("Pi will now sleep for 10 minutes")
-    sleep(600)  # sleeping for 10 minutes
+    sleep(sleepTime)  # sleeping for 10 minutes
     print("Pi has exited 10 minute Timeout and is awaiting motion")
     timer = 0
     
@@ -68,7 +67,7 @@ def Timer():
         if pir.value == True:
             pass
             check = False
-        elif pir.value == False and timer >= 300: # if doesn't turn on for 5 minutes
+        elif pir.value == False and timer >= checkTime: # if doesn't turn on for 5 minutes
             Close(interfaces)
             On = False
             check = False
@@ -77,9 +76,9 @@ def Timer():
             timer += 1
 
 
-# when out of working hours the code is running otherwise the ports are left open
+# When out of working hours the code is running otherwise the ports are left open
 while True:
     TurnOn()
-    while now.hour >= 18 and now.hour <= 9:
+    while now.hour >= maxHours and now.hour <= minHours:
         TurnOn()
         Timer()
