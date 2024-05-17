@@ -3,11 +3,14 @@ from gpiozero import MotionSensor
 from time import sleep
 from datetime import datetime
 from Config import deviceType, host, username_, password_, checkTime, sleepTime, maxHours, minHours, interfaces
+import logging
 
+
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 now = datetime.now()
 
-# REQUIRED TO CONNECT TO SERVER
+# REQUIRED TO CONNECT TO SWITCH
 net_connect = ConnectHandler(
     device_type = deviceType,
     host = host,
@@ -16,8 +19,6 @@ net_connect = ConnectHandler(
 )
 
 
-# all the ports you want closed
-#interfaces = ["gigabitEthernet 1/0/29", "gigabitEthernet 1/0/30", "gigabitEthernet 1/0/31"]
 
 def Close(interfaces):
     # repeates for every interface(port)
@@ -25,6 +26,8 @@ def Close(interfaces):
         # Shutdown the interface
         commands = [f"interface {interface}", "shutdown"]
         output = net_connect.send_config_set(commands)
+        logging.info(f'{interface} status: offline')
+        
         print(output)
         
 
@@ -35,6 +38,13 @@ def Open(interface):
     output = net_connect.send_config_set(commands)
     print(output)
         
+# Runs command, Go through for loop grabbing power from every line and storing. List in list, with string.
+# def GrabPower():
+#     commands = [f"show power inline | inc Gi"]
+#     output = net_connect.send_config_set(commands)
+#     output_list = output.splitlines()
+
+
 
 pir = MotionSensor(4)
 timer = 0
@@ -55,6 +65,8 @@ def TurnOn():
                 print(f"{interface} has been enabled, please wait for AP to boot")
             else:
                 print(f"{interface} is online")
+                logging.info(f'{interface} status: online')
+                
 
 
 def Timer():
@@ -71,7 +83,6 @@ def Timer():
             check = False
         elif pir.value == False and timer >= checkTime: # if doesn't turn on for 5 minutes
             Close(interfaces)
-            On = False
             check = False
         else:
             sleep(1)
@@ -81,6 +92,6 @@ def Timer():
 # when out of working hours the code is running otherwise the ports are left open
 while True:
     TurnOn()
-    while now.hour >= maxHours or now.hour <= minHours:
+    while now.hour >= maxHours or now.hour < minHours:
         TurnOn()
         Timer()
